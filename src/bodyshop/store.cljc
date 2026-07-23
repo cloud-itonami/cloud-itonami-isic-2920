@@ -36,11 +36,10 @@
   audit trail a community trusting a body-shop plant needs, and the
   evidence a plant needs if a shipment or certificate decision is
   later disputed."
-  (:require #?(:clj  [clojure.edn :as edn]
-               :cljs [cljs.reader :as edn])
-            [bodyshop.registry :as registry]
+  (:require [bodyshop.registry :as registry]
             [bodyshop.robotics :as robotics]
-            [langchain.db :as d]))
+            [langchain.db :as d]
+            [langchain-store.core :as ls]))
 
 (defprotocol Store
   (body-shell [s id])
@@ -248,9 +247,6 @@
    :shipment-sequence/jurisdiction    {:db/unique :db.unique/identity}
    :certificate-sequence/jurisdiction {:db/unique :db.unique/identity}})
 
-(defn- enc [v] (pr-str v))
-(defn- dec* [s] (when s (edn/read-string s)))
-
 (defn- body-shell->tx [{:keys [id shell-name rail-material-grade
                                press-die-mass-kg sim-peak-forming-force-n sim-peak-forming-pressure-mpa
                                overall-length-actual-mm overall-length-min-mm overall-length-max-mm
@@ -268,7 +264,7 @@
     overall-length-max-mm                        (assoc :body-shell/overall-length-max-mm overall-length-max-mm)
     (some? weld-quality-defect-unresolved?)      (assoc :body-shell/weld-quality-defect-unresolved? weld-quality-defect-unresolved?)
     (some? robotics-sim-verified?)                (assoc :body-shell/robotics-sim-verified? robotics-sim-verified?)
-    (some? robotics-sim-record)                  (assoc :body-shell/robotics-sim-record (enc robotics-sim-record))
+    (some? robotics-sim-record)                  (assoc :body-shell/robotics-sim-record (ls/enc robotics-sim-record))
     (some? body-shell-shipped?)                  (assoc :body-shell/body-shell-shipped? body-shell-shipped?)
     (some? body-certified?)                      (assoc :body-shell/body-certified? body-certified?)
     jurisdiction                                 (assoc :body-shell/jurisdiction jurisdiction)
@@ -296,7 +292,7 @@
      :overall-length-max-mm (:body-shell/overall-length-max-mm m)
      :weld-quality-defect-unresolved? (boolean (:body-shell/weld-quality-defect-unresolved? m))
      :robotics-sim-verified? (boolean (:body-shell/robotics-sim-verified? m))
-     :robotics-sim-record (dec* (:body-shell/robotics-sim-record m))
+     :robotics-sim-record (ls/dec* (:body-shell/robotics-sim-record m))
      :body-shell-shipped? (boolean (:body-shell/body-shell-shipped? m))
      :body-certified? (boolean (:body-shell/body-certified? m))
      :jurisdiction (:body-shell/jurisdiction m) :status (:body-shell/status m)
@@ -311,25 +307,25 @@
          (map #(pull->body-shell (d/pull (d/db conn) body-shell-pull [:body-shell/id %])))
          (sort-by :id)))
   (weld-quality-screen-of [_ id]
-    (dec* (d/q '[:find ?p . :in $ ?aid
+    (ls/dec* (d/q '[:find ?p . :in $ ?aid
                 :where [?k :weld-quality-screen/body-shell-id ?aid] [?k :weld-quality-screen/payload ?p]]
               (d/db conn) id)))
   (material-cert-verification-of [_ body-shell-id]
-    (dec* (d/q '[:find ?p . :in $ ?aid
+    (ls/dec* (d/q '[:find ?p . :in $ ?aid
                 :where [?a :verification/body-shell-id ?aid] [?a :verification/payload ?p]]
               (d/db conn) body-shell-id)))
   (ledger [_]
     (->> (d/q '[:find ?s ?f :where [?e :ledger/seq ?s] [?e :ledger/fact ?f]] (d/db conn))
          (sort-by first)
-         (mapv (comp dec* second))))
+         (mapv (comp ls/dec* second))))
   (shipment-history [_]
     (->> (d/q '[:find ?s ?r :where [?e :shipment/seq ?s] [?e :shipment/record ?r]] (d/db conn))
          (sort-by first)
-         (mapv (comp dec* second))))
+         (mapv (comp ls/dec* second))))
   (certificate-history [_]
     (->> (d/q '[:find ?s ?r :where [?e :certificate/seq ?s] [?e :certificate/record ?r]] (d/db conn))
          (sort-by first)
-         (mapv (comp dec* second))))
+         (mapv (comp ls/dec* second))))
   (next-shipment-sequence [_ jurisdiction]
     (or (d/q '[:find ?n . :in $ ?j
               :where [?e :shipment-sequence/jurisdiction ?j] [?e :shipment-sequence/next ?n]]
@@ -350,10 +346,10 @@
       (d/transact! conn [(body-shell->tx value)])
 
       :material-cert-verification/set
-      (d/transact! conn [{:verification/body-shell-id (first path) :verification/payload (enc payload)}])
+      (d/transact! conn [{:verification/body-shell-id (first path) :verification/payload (ls/enc payload)}])
 
       :weld-quality-screen/set
-      (d/transact! conn [{:weld-quality-screen/body-shell-id (first path) :weld-quality-screen/payload (enc payload)}])
+      (d/transact! conn [{:weld-quality-screen/body-shell-id (first path) :weld-quality-screen/payload (ls/enc payload)}])
 
       :body-shell/mark-shipped
       (let [body-shell-id (first path)
@@ -363,7 +359,7 @@
         (d/transact! conn
                      [(body-shell->tx (assoc body-shell-patch :id body-shell-id))
                       {:shipment-sequence/jurisdiction jurisdiction :shipment-sequence/next next-n}
-                      {:shipment/seq (count (shipment-history s)) :shipment/record (enc (get result "record"))}])
+                      {:shipment/seq (count (shipment-history s)) :shipment/record (ls/enc (get result "record"))}])
         result)
 
       :body-shell/mark-certified
@@ -374,12 +370,12 @@
         (d/transact! conn
                      [(body-shell->tx (assoc body-shell-patch :id body-shell-id))
                       {:certificate-sequence/jurisdiction jurisdiction :certificate-sequence/next next-n}
-                      {:certificate/seq (count (certificate-history s)) :certificate/record (enc (get result "record"))}])
+                      {:certificate/seq (count (certificate-history s)) :certificate/record (ls/enc (get result "record"))}])
         result)
       nil)
     s)
   (append-ledger! [s fact]
-    (d/transact! conn [{:ledger/seq (count (ledger s)) :ledger/fact (enc fact)}])
+    (d/transact! conn [{:ledger/seq (count (ledger s)) :ledger/fact (ls/enc fact)}])
     fact)
   (with-body-shells [s body-shells]
     (when (seq body-shells) (d/transact! conn (mapv body-shell->tx (vals body-shells)))) s))
