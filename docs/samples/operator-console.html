@@ -1,65 +1,16 @@
-<html><head><meta charset="utf-8"><title>cloud-itonami-isic-2920 · body shop</title><style>
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.ok { color: #137a3f; }
-body { font-family: system-ui,-apple-system,sans-serif; margin: 0; color: #1a1a1a; background: #fafafa; }
-header.bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e5e5e5; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
-h2 { margin-top: 0; font-size: 15px; }
-.warn { color: #b25c00; background: #fff8e1; padding: 2px 6px; border-radius: 4px; }
-main { max-width: 980px; margin: 24px auto; padding: 0 20px; }
-header.bar h1 { font-size: 18px; margin: 0; font-weight: 600; }
-.muted { color: #888; font-size: 13px; }
-.critical { color: #fff; background: #b3261e; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.err { color: #b3261e; background: #fbe9e7; padding: 2px 6px; border-radius: 4px; }
-th { font-weight: 600; color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
-header.bar .badge { margin-left: auto; font-size: 12px; color: #666; }
-code { font-size: 12px; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
-</style></head><body>
-<header class="bar">
-  <h1>Body shop (ISIC 2920) — Operator Console</h1>
-  <span class="badge">read-only sample · governor-gated · never dispatches hardware</span>
-</header>
-<main>
-  <section class="card">
-    <h2>Body shells</h2>
-    <p class="muted">Demo snapshot — live data from <code>bodyshop.store</code> / <code>clojure -M:dev:run</code>.</p>
-    <table>
-      <thead><tr><th>Shell</th><th>Name</th><th>Jurisdiction</th><th>Rail grade</th><th>Overall length</th><th>Weld quality</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>shell-1</td><td>Meridian Sedan Body Shell BS-3301</td><td>JPN</td><td>DP600</td><td class="ok">4665 &isin; [4650,4680] mm</td><td class="ok">resolved</td><td class="ok">ready</td></tr>
-        <tr><td>shell-2</td><td>Atlas Crossover Body Shell BS-1180</td><td>ATL</td><td>DP600</td><td class="ok">in-spec</td><td class="ok">—</td><td><span class="err">no spec-basis</span></td></tr>
-        <tr><td>shell-3</td><td>田中セダンボディシェル BS-2215</td><td>JPN</td><td>DP980</td><td><span class="err">4720 mm out of range</span></td><td class="ok">—</td><td><span class="warn">HARD hold on shipment</span></td></tr>
-        <tr><td>shell-4</td><td>佐藤SUVボディシェル BS-3330</td><td>JPN</td><td>boron-PHS</td><td class="ok">in-spec</td><td><span class="err">unresolved</span></td><td><span class="critical">weld-quality hold</span></td></tr>
-        <tr><td>shell-5</td><td>鈴木ハッチバックボディシェル BS-1118</td><td>JPN</td><td>DP600</td><td class="ok">in-spec</td><td class="ok">resolved</td><td><span class="warn">robotics-sim out-of-tolerance</span></td></tr>
-      </tbody>
-    </table>
-  </section>
-  <section class="card">
-    <h2>Action gate (Stamping Governor)</h2>
-    <p class="muted">HARD holds cannot be overridden. Actuation always escalates to a human quality engineer.</p>
-    <table>
-      <thead><tr><th>Op</th><th>Stake</th><th>Gate</th></tr></thead>
-      <tbody>
-        <tr><td><code>:body-shell/intake</code></td><td>none</td><td><span class="ok">phase-3 auto when clean</span></td></tr>
-        <tr><td><code>:material-cert-rules/verify</code></td><td>none</td><td><span class="warn">human approval · no fabricated material-cert rules</span></td></tr>
-        <tr><td><code>:end-of-line-quality/screen</code></td><td>none</td><td><span class="critical">HARD hold if unresolved defect</span></td></tr>
-        <tr><td><code>:robotics/simulate-stamping-press</code></td><td>low</td><td><span class="warn">human approval · real physics-2d press-die/blank forming mission</span></td></tr>
-        <tr><td><code>:actuation/ship-body-shell</code></td><td class="critical">safety-critical</td><td><span class="warn">always human · dimension + robotics + evidence checks</span></td></tr>
-        <tr><td><code>:actuation/issue-body-certificate</code></td><td class="critical">safety-critical</td><td><span class="warn">always human · weld-quality + double-issue guard</span></td></tr>
-      </tbody>
-    </table>
-  </section>
-  <section class="card">
-    <h2>Social hand-off</h2>
-    <p class="muted">Audit package for final-assembly-plant quality auditors — <code>bodyshop.export/audit-package</code> and <code>package-&gt;csv-bundle</code> (body-shells / ledger / shipments / body-certificates CSV).</p>
-    <table>
-      <thead><tr><th>Artifact</th><th>Kind</th><th>Note</th></tr></thead>
-      <tbody>
-        <tr><td>JPN-BSH-000000</td><td>body-shell-shipment-draft</td><td>unsigned · plant signs offline</td></tr>
-        <tr><td>JPN-BIWQC-000000</td><td>body-certificate-draft</td><td>unsigned · final-assembly-plant intake is plant act</td></tr>
-      </tbody>
-    </table>
-  </section>
-</main>
-</body></html>
+<html><head><meta charset="utf-8"><title>cloud-itonami-isic-2920</title><style>body{font:14px/1.5 sans-serif;margin:0;color:#1a1a1a;background:#f5f5f5}.bar{background:#2a0a0a;color:#fff;padding:1.2rem 2rem}.bar h1{margin:0;font-size:1.15rem}main{max-width:980px;margin:1.5rem auto;padding:0 1rem}.card{background:#fff;border-radius:8px;padding:1.2rem 1.4rem;margin-bottom:1.2rem;box-shadow:0 1px 3px rgba(0,0,0,.08)}.muted{color:#777;font-size:.82rem}table{border-collapse:collapse;width:100%;font-size:.85rem}th,td{text-align:left;padding:.42rem .5rem;border-bottom:1px solid #eee}th{font-weight:600;color:#555}.ok{color:#0a7d33}.warn{color:#9a6700}.critical{color:#b41010;font-weight:600}code{background:#f0f0f0;padding:.1rem .3rem;border-radius:3px;font-size:.8rem}</style></head><body><header class="bar"><h1>Auto body manufacturing ops (ISIC 2920) — <code>bodyshop</code></h1></header><main><section class="card"><h2>Production body shells</h2><p class="muted">Demo from <code>bodyshop.store</code> via <code>bodyshop.render-html</code>. No invented data.</p><table><thead><tr><th>Shell</th><th>Material</th><th>Last op</th></tr></thead><tbody>        <tr><td>shell-1</td><td>HSLA-950</td><td><span class="critical">HARD hold: robotics-simulation-missing</span></td></tr>
+        <tr><td>shell-2</td><td>-</td><td><span class="muted">no activity</span></td></tr>
+        <tr><td>shell-3</td><td>-</td><td><span class="muted">no activity</span></td></tr>
+        <tr><td>shell-4</td><td>-</td><td><span class="muted">no activity</span></td></tr>
+        <tr><td>shell-5</td><td>-</td><td><span class="muted">no activity</span></td></tr>
+        <tr><td>shell-999</td><td>Unknown</td><td><span class="ok">committed</span></td></tr></tbody></table></section><section class="card"><h2>Action gate</h2><table><thead><tr><th>Op</th><th>Gate</th></tr></thead><tbody>        <tr><td><code>:body-shell/intake</code></td><td><span class="ok">auto-commit when clean</span></td></tr>
+        <tr><td><code>:material-cert-rules/verify</code></td><td><span class="warn">ALWAYS human approval; cert evidence required before shipping</span></td></tr>
+        <tr><td><code>:end-of-line-quality/screen</code></td><td><span class="warn">ALWAYS human approval</span></td></tr>
+        <tr><td><code>:robotics/simulate-stamping-press</code></td><td><span class="warn">ALWAYS human approval (press forming test)</span></td></tr>
+        <tr><td><code>:actuation/ship-body-shell</code></td><td><span class="warn">ALWAYS human approval; material-cert prerequisite</span></td></tr>
+        <tr><td><code>:actuation/issue-stamping-certificate</code></td><td><span class="warn">ALWAYS human approval (actuation)</span></td></tr></tbody></table></section><section class="card"><h2>Audit ledger</h2><table><thead><tr><th>Fact</th><th>Op</th><th>Subject</th><th>Basis</th></tr></thead><tbody>        <tr><td>committed</td><td><code>intake</code></td><td>shell-1</td><td>id, material</td></tr>
+        <tr><td>committed</td><td><code>verify</code></td><td>shell-1</td><td>JIS G 3135 自動車用加工性熱延鋼板及び鋼帯 / 自動車用高強度冷延鋼板 (産業標準。法定の車両安全基準ではなく購買契約上の材料規格), https://www.jisc.go.jp/</td></tr>
+        <tr><td>committed</td><td><code>screen</code></td><td>shell-1</td><td>end-of-line-quality-check</td></tr>
+        <tr><td>governor-hold</td><td><code>ship-body-shell</code></td><td>shell-1</td><td>robotics-simulation-missing</td></tr>
+        <tr><td>governor-hold</td><td><code>ship-body-shell</code></td><td>shell-1</td><td>robotics-simulation-missing</td></tr>
+        <tr><td>committed</td><td><code>intake</code></td><td>shell-999</td><td>id, material</td></tr></tbody></table></section></main></body></html>
