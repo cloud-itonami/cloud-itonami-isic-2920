@@ -33,7 +33,7 @@
   action or issuing the body certificate itself (that is `bodyshop.
   operation`'s `:actuation/ship-body-shell`/`:actuation/issue-body-
   certificate`, always human-gated -- see README `Actuation`)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn- unsigned-certificate
   "Every certificate this actor produces is UNSIGNED -- signature is
@@ -81,7 +81,7 @@
     (throw (ex-info "body-shell-shipment: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "body-shell-shipment: sequence must be >= 0" {})))
-  (let [shipment-number (str (str/upper-case jurisdiction) "-BSH-" (zero-pad sequence 6))
+  (let [shipment-number (str (str/upper jurisdiction) "-BSH-" (zero-pad sequence 6))
         record {"record_id" shipment-number
                 "kind" "body-shell-shipment-draft"
                 "body_shell_id" body-shell-id
@@ -107,7 +107,7 @@
     (throw (ex-info "body-certificate: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "body-certificate: sequence must be >= 0" {})))
-  (let [certificate-number (str (str/upper-case jurisdiction) "-BIWQC-" (zero-pad sequence 6))
+  (let [certificate-number (str (str/upper jurisdiction) "-BIWQC-" (zero-pad sequence 6))
         record {"record_id" certificate-number
                 "kind" "body-certificate-draft"
                 "body_shell_id" body-shell-id
