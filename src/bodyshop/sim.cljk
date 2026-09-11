@@ -1,5 +1,5 @@
 (ns bodyshop.sim
-  "Demo driver -- `clojure -M:dev:run`. Walks a clean body-shell
+  "Demo driver -- `kbb -M:dev:run`. Walks a clean body-shell
   through intake -> (an evidence-incomplete shipment attempt) ->
   material-cert-rules verification -> end-of-line weld-quality
   screening -> robot stamping-press-forming mission -> body-shell-
