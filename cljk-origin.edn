@@ -1,0 +1,23 @@
+{:format :kotoba.cljk-origin/v1
+ :renamed-on "2026-09-11"
+ :decision "adr-2609111500-cljk-rename-all-clojure-source (com-junkawasaki/root 90-docs/adr; owner instruction 2026-09-11)"
+ :rule "value = the extension the file had before the rename. A path ending in .clj.cljk or .cljs.cljk kept it in the name because both platform files existed (or the plain target was taken)."
+ :origins
+ {"src/bodyshop/bodyshopadvisor.cljk" ".cljc"
+  "src/bodyshop/export.cljk" ".cljc"
+  "src/bodyshop/export_run.cljk" ".clj"
+  "src/bodyshop/facts.cljk" ".cljc"
+  "src/bodyshop/governor.cljk" ".cljc"
+  "src/bodyshop/operation.cljk" ".cljc"
+  "src/bodyshop/phase.cljk" ".cljc"
+  "src/bodyshop/registry.cljk" ".cljc"
+  "src/bodyshop/render_html.cljk" ".clj"
+  "src/bodyshop/robotics.cljk" ".cljc"
+  "src/bodyshop/sim.cljk" ".cljc"
+  "src/bodyshop/store.cljk" ".cljc"
+  "test/bodyshop/export_test.cljk" ".clj"
+  "test/bodyshop/facts_test.cljk" ".clj"
+  "test/bodyshop/governor_contract_test.cljk" ".clj"
+  "test/bodyshop/phase_test.cljk" ".clj"
+  "test/bodyshop/registry_test.cljk" ".clj"
+  "test/bodyshop/store_contract_test.cljk" ".clj"}}
