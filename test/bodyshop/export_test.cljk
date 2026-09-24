@@ -1,7 +1,7 @@
 (ns bodyshop.export-test
   "Audit-package export contract -- social/regulatory hand-off shape."
   (:require [kotoba.lang.text :as str]
-            [clojure.test :refer [deftest is]]
+            [kotoba.test :refer [deftest is]]
             [langgraph.graph :as g]
             [bodyshop.export :as export]
             [bodyshop.operation :as op]

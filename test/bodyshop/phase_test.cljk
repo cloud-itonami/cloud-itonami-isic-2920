@@ -2,7 +2,7 @@
   "The phase table as executable tests. The invariant this repo cannot
   regress on: `:actuation/ship-body-shell`/`:actuation/issue-body-
   certificate` must NEVER be a member of any phase's `:auto` set."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [bodyshop.phase :as phase]))
 
 (deftest ship-body-shell-never-auto-at-any-phase
