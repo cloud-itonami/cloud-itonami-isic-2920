@@ -1,0 +1,49 @@
+(ns bodyshop.physics-probe-test
+  "The probe is the bot's only source of \"measured\"; these pin that it
+  measures (every run numeric, count = expected), that the numbers come
+  from the simulation (each grade's derived boundary really straddles its
+  forming-pressure ceiling), and that a changed solver would show."
+  (:require [clojure.test :refer [deftest is testing]]
+            [bodyshop.physics-probe :as probe]
+            [bodyshop.robotics :as robotics]))
+
+(deftest probe-measures-every-run
+  (let [p (probe/probe)]
+    (is (= "itonami.physical-ai.probe.v1" (:physics-probe/schema p)))
+    (is (pos? (:count p)))
+    (is (= (:count p) (:expected p) (count (:runs p))))
+    (testing "every run carries a numeric pressure and tick count from the trajectory"
+      (doseq [r (:runs p)]
+        (is (number? (get-in r [:quantities :sim-peak-forming-pressure-mpa])))
+        (is (pos? (get-in r [:quantities :ticks])))))))
+
+(deftest pressure-rises-with-die-mass-across-the-dp600-sweep
+  (let [ps (->> (:runs (probe/probe))
+                (filter #(= :DP600 (get-in % [:input :rail-material-grade])))
+                (map #(get-in % [:quantities :sim-peak-forming-pressure-mpa])))]
+    (is (= 4 (count ps)))
+    (is (apply < ps))))
+
+(deftest seeded-fixtures-land-on-both-sides-of-the-ceiling
+  (let [runs (:runs (probe/probe))
+        find-run (fn [kg g] (first (filter #(= {:press-die-mass-kg kg :rail-material-grade g} (:input %)) runs)))]
+    (is (false? (:out-of-tolerance? (find-run 60000 :DP600))))
+    (is (true? (:out-of-tolerance? (find-run 250000 :DP600))))))
+
+(deftest derived-boundary-straddles-each-grades-ceiling
+  (doseq [g (keys robotics/panel-yield-strength-mpa)]
+    (let [m (probe/max-passing-die-mass-kg g)
+          p (fn [kg] (:sim-peak-forming-pressure-mpa (robotics/press-telemetry-for {:press-die-mass-kg kg})))
+          ceiling (robotics/forming-pressure-ceiling-mpa g)]
+      (is (number? m) (str g))
+      (testing "at the boundary the pressure stays within the ceiling; 1% heavier it exceeds it"
+        (is (<= (p m) ceiling) (str g))
+        (is (> (p (* 1.01 m)) ceiling) (str g))))))
+
+(deftest stronger-grade-tolerates-a-heavier-die
+  (let [d (:max-passing-die-mass-kg (:derived (probe/probe)))]
+    (is (< (:DP600 d) (:DP980 d) (:boron-PHS d)))))
+
+(deftest bracket-that-does-not-straddle-answers-nil
+  (is (nil? (probe/max-passing-die-mass-kg :DP600 200000.0 1.0e7 10)))
+  (is (nil? (probe/max-passing-die-mass-kg :unknown-grade))))

@@ -1,0 +1,94 @@
+(ns bodyshop.physics-probe
+  "The physical-AI bot's measurement: run this actor's REAL `physics-2d`
+  stamping-press forming simulation (`bodyshop.robotics/simulate-press`)
+  over a fixed sweep of press-die masses and rail-material grades and print
+  ONE EDN map of the physical quantities it computed.
+
+    kbb -M:dev:physics
+
+  This is what the resident bot (hermes/profiles/physai-isic-2920/SOUL.md)
+  reads every tick. Every number is derived from a time-stepped trajectory
+  by `bodyshop.robotics`, never typed in. Output schema
+  `itonami.physical-ai.probe.v1`:
+
+    {:physics-probe/schema \"itonami.physical-ai.probe.v1\"
+     :repo      \"cloud-itonami/cloud-itonami-isic-2920\"
+     :procedure \"...\"
+     :solver    \"physics-2d/world-step\"
+     :runs      [{:input {...} :quantities {...} :out-of-tolerance? bool} ...]
+     :derived   {...}           ; quantities computed ACROSS runs
+     :count     n               ; runs that produced numeric quantities
+     :expected  n}
+
+  `:count` is an evidence floor: 0 means \"could not measure\", never
+  \"nothing out of tolerance\". Exit 0 when every run produced numbers,
+  2 when any run did not."
+  (:require [bodyshop.robotics :as robotics]))
+
+(def schema "itonami.physical-ai.probe.v1")
+
+(def sweep
+  "Press-die mass x rail-material grade pairs swept each tick. 60 000 kg with
+  :DP600 / :DP980 / :boron-PHS and 250 000 kg with :DP600 are the fixtures
+  `bodyshop.store` seeds (250 t is the over-severe press run); 30 000 and
+  120 000 kg bracket the DP600 slope so a solver change shows up as a change
+  in slope, not only in one point."
+  [{:press-die-mass-kg 30000  :rail-material-grade :DP600}
+   {:press-die-mass-kg 60000  :rail-material-grade :DP600}
+   {:press-die-mass-kg 120000 :rail-material-grade :DP600}
+   {:press-die-mass-kg 250000 :rail-material-grade :DP600}
+   {:press-die-mass-kg 60000  :rail-material-grade :DP980}
+   {:press-die-mass-kg 60000  :rail-material-grade :boron-PHS}])
+
+(defn- telemetry [input]
+  (robotics/press-telemetry-for input))
+
+(defn- run-one [input]
+  (let [t (telemetry input)]
+    {:input input
+     :quantities (assoc t :forming-pressure-ceiling-mpa
+                        (robotics/forming-pressure-ceiling-mpa (:rail-material-grade input)))
+     :out-of-tolerance? (robotics/forming-pressure-out-of-tolerance? (merge input t))}))
+
+(defn max-passing-die-mass-kg
+  "Largest press-die mass whose simulated local forming pressure stays at or
+  below `grade`'s `forming-pressure-ceiling-mpa`, by bisection over the REAL
+  simulation (pressure is monotone in mass at fixed velocity/draw depth --
+  pinned by physics_probe_test). nil when the bracket does not straddle the
+  ceiling or the grade has no ceiling."
+  ([grade] (max-passing-die-mass-kg grade 1.0 1.0e7 50))
+  ([grade lo hi iters]
+   (let [over? (fn [m] (robotics/forming-pressure-out-of-tolerance?
+                        (merge {:rail-material-grade grade}
+                               (telemetry {:press-die-mass-kg m}))))]
+     (when (and (robotics/forming-pressure-ceiling-mpa grade) (not (over? lo)) (over? hi))
+       (loop [lo lo hi hi i 0]
+         (if (>= i iters)
+           lo
+           (let [mid (/ (+ lo hi) 2.0)]
+             (if (over? mid)
+               (recur lo mid (inc i))
+               (recur mid hi (inc i))))))))))
+
+(defn probe []
+  (let [runs (mapv run-one sweep)
+        numeric? (fn [r] (number? (get-in r [:quantities :sim-peak-forming-pressure-mpa])))]
+    {:physics-probe/schema schema
+     :repo "cloud-itonami/cloud-itonami-isic-2920"
+     :procedure "Automotive structural body-panel stamping-press forming cycle (AHSS DP600/DP980/boron-PHS, robot press line)"
+     :solver "physics-2d/world-step"
+     :runs runs
+     :derived {:forming-pressure-ceiling-multiple robotics/forming-pressure-ceiling-multiple
+               :max-passing-die-mass-kg
+               (into (sorted-map)
+                     (map (fn [g] [g (max-passing-die-mass-kg g)]))
+                     (keys robotics/panel-yield-strength-mpa))}
+     :count (count (filter numeric? runs))
+     :expected (count sweep)}))
+
+(defn -main [& _]
+  (let [p (probe)]
+    (prn p)
+    (when-not (= (:count p) (:expected p))
+      #?(:cljs (set! (.-exitCode js/process) 2)
+         :default (System/exit 2)))))
